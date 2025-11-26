@@ -15,3 +15,47 @@ insert into Meter Values("M3",3, "2013-01-31","2025-08-13");
 insert into Meter Values("M4",4, "2019-07-16","2025-10-31");
 insert into Meter Values("M5",5, "2022-10-05","2025-05-03");
 insert into Meter Values("M6",6, "2000-03-27","2025-02-23");
+
+create table Electricity_Usage(UsageId int primary key, MeterId varchar(10) not null, Reading_Date date not null, Usage_Units numeric not null, foreign key(MeterId) references Meter(MeterId) on delete cascade, constraint chk_usage_value check (Usage_Units>=0));
+insert into Electricity_Usage values(1,"M1", "2025-09-19", 67);
+insert into Electricity_Usage values(2,"M2", "2024-08-29", 167);
+insert into Electricity_Usage values(3,"M3", "2025-01-01", 157);
+insert into Electricity_Usage values(4,"M4", "2020-11-19", 200);
+insert into Electricity_Usage values(5,"M5", "2023-12-07", 670);
+
+create table Bill(BillId int auto_increment primary key, MeterId varchar(10) not null, Bill_Date date not null, Amount_due numeric not null, Due_date date not null, paid boolean not null default 0, foreign key(MeterId) references Meter(MeterId) on delete cascade, constraint chk_amount_due check (Amount_due>=0));
+insert into Bill values(1,"M1", "2025-07-19", 670,"2025-07-29",1);
+insert into Bill values(2,"M2", "2025-02-02", 630,"2025-07-02",0);
+insert into Bill values(3,"M3", "2024-07-19", 700,"2025-07-29",0);
+insert into Bill values(4,"M4", "2025-12-10", 60,"2025-12-29",1);
+insert into Bill values(5,"M5", "2024-11-19", 70,"2025-11-29",1);
+
+create table Payment(PaymentId int primary key, BillId int not null, Payment_Date date not null, Amount_paid numeric not null, foreign key(BillId) references Bill(BillId) on delete cascade, constraint chk_amount_paid check (Amount_Paid>=0));
+insert into Payment Values(11,1, "2023-09-19",6999);
+insert into Payment Values(22,2, "2023-09-29",4999);
+insert into Payment Values(33,3, "2023-09-30",5999);
+insert into Payment Values(44,4, "2023-09-28",3999);
+insert into Payment Values(55,5, "2023-09-09",8999);
+
+
+SELECT c.CustomerId, c.Name, c.Address, c.PhoneNumber, c.Email,
+    m.MeterId, m.Installationdate, m.Lastreadingdate,
+    eu.UsageId, eu.Reading_Date, eu.Usage_Units,
+    b.BillId, b.Bill_Date, b.Amount_due, b.Due_date, b.paid,
+    p.PaymentId, p.Payment_Date, p.Amount_paid
+FROM Customer c
+LEFT JOIN Meter m
+    ON m.CustomerId = c.CustomerId
+LEFT JOIN Electricity_Usage eu
+    ON eu.MeterId = m.MeterId
+LEFT JOIN Bill b
+    ON b.MeterId = m.MeterId
+LEFT JOIN Payment p
+    ON p.BillId = b.BillId
+ORDER BY c.CustomerId, m.MeterId, b.BillId, eu.Reading_Date, p.Payment_Date;
+
+select Usage_Units from Electricity_Usage where Usage_Units>200;
+SELECT c.Name, b.Amount_due FROM Customer c JOIN Meter m ON c.CustomerId = m.CustomerId JOIN Bill b ON m.MeterId = b.MeterId WHERE b.paid = 0 ORDER BY b.Amount_due DESC;
+select BillId,paid from Bill order by Bill_Date asc;
+select CustomerId from Customer where CustomerId in (select CustomerId from Meter where Installationdate>"2023-12-31");
+select M.MeterId,E.Usage_units from Meter M join Electricity_Usage E on M.MeterId=E.MeterId order by Usage_units desc; 
